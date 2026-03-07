@@ -1,36 +1,26 @@
 import discord
-from discord.ext import tasks
+from discord.ext import commands, tasks
 import requests
 import datetime
 import os
 
 TOKEN = os.getenv("TOKEN")
-CHANNEL_ID = os.getenv("CHANNEL_ID")
 
 coins = ["bitcoin", "ethereum", "solana"]
 
 intents = discord.Intents.default()
-client = discord.Client(intents=intents)
+intents.message_content = True
 
-@client.event
+bot = commands.Bot(command_prefix="!", intents=intents)
+
+@bot.event
 async def on_ready():
-    print(f"Bot ist online als {client.user}")
-    post_update.start()
+    print(f"Bot ist online als {bot.user}")
 
-@tasks.loop(hours=24)
-async def post_update():
-    if CHANNEL_ID is None:
-        print("CHANNEL_ID fehlt!")
-        return
-
-    channel = client.get_channel(int(CHANNEL_ID))
-
-    if channel is None:
-        print("Channel nicht gefunden!")
-        return
-
+@bot.command()
+async def market(ctx):
     embed = get_market_embed()
-    await channel.send(embed=embed)
+    await ctx.send(embed=embed)
 
 def get_market_embed():
     url = "https://api.coingecko.com/api/v3/simple/price"
@@ -39,7 +29,7 @@ def get_market_embed():
     res = requests.get(url, params=params).json()
 
     embed = discord.Embed(
-        title="📊 Daily Market Update",
+        title="📊 Market Update",
         description=str(datetime.date.today()),
         color=0x00ff99
     )
@@ -50,4 +40,4 @@ def get_market_embed():
 
     return embed
 
-client.run(TOKEN)
+bot.run(TOKEN)
