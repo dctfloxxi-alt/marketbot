@@ -67,4 +67,5 @@ async def market(ctx):
         await ctx.send("⚠️ Unerwarteter Fehler.")
 
 # TOKEN aus Environment Variable laden
+import os
 bot.run(os.getenv("TOKEN"))
