@@ -422,4 +422,6 @@ async def cryptohelp(ctx):
 # START
 # ===============================
 
-bot.run(TOKEN)
+import os
+
+TOKEN = os.getenv("TOKEN")
