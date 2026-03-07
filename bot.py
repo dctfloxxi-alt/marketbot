@@ -3,37 +3,45 @@ from discord.ext import commands
 import requests
 import os
 
-# Intents aktivieren
+# Discord intents
 intents = discord.Intents.default()
 intents.message_content = True
 
 bot = commands.Bot(command_prefix="!", intents=intents)
 
-@bot.event
-async def on_ready():
-    print(f"✅ Logged in as {bot.user}")
+# Coins
+coins = {
+    "bitcoin": "BTC",
+    "ethereum": "ETH",
+    "litecoin": "LTC",
+    "solana": "SOL"
+}
 
-@bot.command()
-async def market(ctx):
+API_URL = "https://api.coingecko.com/api/v3/simple/price"
 
-    coins = {
-        "bitcoin": "BTC",
-        "ethereum": "ETH",
-        "solana": "SOL",
-        "litecoin": "LTC"
-    }
 
-    url = "https://api.coingecko.com/api/v3/simple/price"
-
+def get_prices():
     params = {
         "ids": ",".join(coins.keys()),
         "vs_currencies": "usd",
         "include_24hr_change": "true"
     }
 
+    r = requests.get(API_URL, params=params, timeout=10)
+    return r.json()
+
+
+@bot.event
+async def on_ready():
+    print(f"✅ Bot online: {bot.user}")
+
+
+# MARKET OVERVIEW
+@bot.command()
+async def market(ctx):
+
     try:
-        response = requests.get(url, params=params, timeout=10)
-        data = response.json()
+        data = get_prices()
 
         embed = discord.Embed(
             title="📊 Crypto Market",
@@ -43,29 +51,66 @@ async def market(ctx):
 
         for coin, symbol in coins.items():
 
-            price = data.get(coin, {}).get("usd", "N/A")
-            change = data.get(coin, {}).get("usd_24h_change", 0)
-
-            if isinstance(change, float):
-                change = round(change, 2)
+            price = data[coin]["usd"]
+            change = round(data[coin]["usd_24h_change"], 2)
 
             arrow = "📈" if change > 0 else "📉"
 
             embed.add_field(
-                name=f"{symbol}",
+                name=symbol,
                 value=f"💰 ${price}\n{arrow} 24h: {change}%",
                 inline=True
             )
 
-        embed.set_footer(text="Data from CoinGecko")
+        embed.set_footer(text="Data: CoinGecko")
 
         await ctx.send(embed=embed)
 
-    except requests.exceptions.RequestException:
-        await ctx.send("⚠️ API Fehler – versuche es später erneut.")
-    except Exception as e:
-        await ctx.send("⚠️ Unerwarteter Fehler.")
+    except:
+        await ctx.send("⚠️ Fehler beim Laden der Daten")
 
-# TOKEN aus Environment Variable laden
-import os
+
+# SINGLE PRICE COMMAND
+async def send_price(ctx, coin):
+
+    try:
+        data = get_prices()
+
+        price = data[coin]["usd"]
+        change = round(data[coin]["usd_24h_change"], 2)
+
+        arrow = "📈" if change > 0 else "📉"
+
+        embed = discord.Embed(
+            title=f"{coins[coin]} Price",
+            description=f"💰 ${price}\n{arrow} 24h: {change}%",
+            color=0x00ff99
+        )
+
+        await ctx.send(embed=embed)
+
+    except:
+        await ctx.send("⚠️ Preis konnte nicht geladen werden")
+
+
+@bot.command()
+async def btc(ctx):
+    await send_price(ctx, "bitcoin")
+
+
+@bot.command()
+async def eth(ctx):
+    await send_price(ctx, "ethereum")
+
+
+@bot.command()
+async def ltc(ctx):
+    await send_price(ctx, "litecoin")
+
+
+@bot.command()
+async def sol(ctx):
+    await send_price(ctx, "solana")
+
+
 bot.run(os.getenv("TOKEN"))
