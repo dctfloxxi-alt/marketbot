@@ -6,7 +6,7 @@ from datetime import datetime
 import json
 import os
 
-TOKEN = "DEIN_TOKEN"
+TOKEN = os.getenv("TOKEN")
 
 intents = discord.Intents.default()
 intents.message_content = True
@@ -422,6 +422,4 @@ async def cryptohelp(ctx):
 # START
 # ===============================
 
-import os
-
-TOKEN = os.getenv("TOKEN")
+bot.run(TOKEN)
