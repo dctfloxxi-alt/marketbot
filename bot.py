@@ -4,6 +4,8 @@ import requests
 import os
 from datetime import datetime
 
+TOKEN = "DEIN_DISCORD_BOT_TOKEN"
+
 intents = discord.Intents.default()
 intents.message_content = True
 
@@ -23,26 +25,34 @@ API_SIMPLE = "https://api.coingecko.com/api/v3/simple/price"
 API_MARKET = "https://api.coingecko.com/api/v3/coins/markets"
 
 
-def get_prices():
-
-    params = {
-        "ids": ",".join(coins.keys()),
-        "vs_currencies": "usd",
-        "include_24hr_change": "true"
-    }
-
-    r = requests.get(API_SIMPLE, params=params)
-    return r.json()
-
-
 def now():
-
     return datetime.now().strftime("%d.%m.%Y %H:%M")
+
+
+def get_prices():
+    try:
+
+        params = {
+            "ids": ",".join(coins.keys()),
+            "vs_currencies": "usd",
+            "include_24hr_change": "true"
+        }
+
+        r = requests.get(API_SIMPLE, params=params, timeout=10)
+
+        if r.status_code != 200:
+            print("API Error:", r.status_code)
+            return None
+
+        return r.json()
+
+    except Exception as e:
+        print("Request Error:", e)
+        return None
 
 
 @bot.event
 async def on_ready():
-
     print("Bot online:", bot.user)
     check_alerts.start()
 
@@ -53,6 +63,10 @@ async def market(ctx):
 
     data = get_prices()
 
+    if data is None:
+        await ctx.send("⚠️ Fehler beim Laden der Daten")
+        return
+
     embed = discord.Embed(
         title="📊 Crypto Market",
         description=f"📅 {now()}",
@@ -60,6 +74,9 @@ async def market(ctx):
     )
 
     for coin, symbol in coins.items():
+
+        if coin not in data:
+            continue
 
         price = data[coin]["usd"]
         change = round(data[coin]["usd_24h_change"], 2)
@@ -79,6 +96,10 @@ async def market(ctx):
 async def send_price(ctx, coin):
 
     data = get_prices()
+
+    if data is None:
+        await ctx.send("⚠️ API Fehler")
+        return
 
     price = data[coin]["usd"]
     change = round(data[coin]["usd_24h_change"], 2)
@@ -120,9 +141,15 @@ async def gainers(ctx):
 
     data = get_prices()
 
-    sorted_coins = sorted(coins.keys(),
-                          key=lambda x: data[x]["usd_24h_change"],
-                          reverse=True)
+    if data is None:
+        await ctx.send("API Fehler")
+        return
+
+    sorted_coins = sorted(
+        coins.keys(),
+        key=lambda x: data[x]["usd_24h_change"],
+        reverse=True
+    )
 
     embed = discord.Embed(title="📈 Top Gainers", color=0x00ff00)
 
@@ -143,8 +170,14 @@ async def losers(ctx):
 
     data = get_prices()
 
-    sorted_coins = sorted(coins.keys(),
-                          key=lambda x: data[x]["usd_24h_change"])
+    if data is None:
+        await ctx.send("API Fehler")
+        return
+
+    sorted_coins = sorted(
+        coins.keys(),
+        key=lambda x: data[x]["usd_24h_change"]
+    )
 
     embed = discord.Embed(title="📉 Top Losers", color=0xff0000)
 
@@ -159,7 +192,7 @@ async def losers(ctx):
     await ctx.send(embed=embed)
 
 
-# TOP 10 COINS
+# TOP 10
 @bot.command()
 async def top(ctx):
 
@@ -189,11 +222,9 @@ async def top(ctx):
     await ctx.send(embed=embed)
 
 
-# PRICE ALERT
+# ALERT
 @bot.command()
 async def alert(ctx, coin, price: float):
-
-    coin = coin.lower()
 
     mapping = {
         "btc": "bitcoin",
@@ -202,20 +233,22 @@ async def alert(ctx, coin, price: float):
         "sol": "solana"
     }
 
-    if coin not in mapping:
+    coin = mapping.get(coin.lower())
+
+    if coin is None:
         await ctx.send("Coin nicht unterstützt")
         return
 
     alerts.append({
         "channel": ctx.channel.id,
-        "coin": mapping[coin],
+        "coin": coin,
         "target": price
     })
 
-    await ctx.send(f"🔔 Alert gesetzt für {coin.upper()} bei ${price}")
+    await ctx.send(f"🔔 Alert gesetzt für {coin} bei ${price}")
 
 
-# ALERT CHECKER
+# ALERT CHECK
 @tasks.loop(seconds=60)
 async def check_alerts():
 
@@ -223,6 +256,9 @@ async def check_alerts():
         return
 
     data = get_prices()
+
+    if data is None:
+        return
 
     for alert in alerts[:]:
 
@@ -248,14 +284,14 @@ async def portfolio(ctx, action=None, coin=None, amount: float = None):
     if user not in portfolios:
         portfolios[user] = {}
 
-    if action == "add":
+    mapping = {
+        "btc": "bitcoin",
+        "eth": "ethereum",
+        "ltc": "litecoin",
+        "sol": "solana"
+    }
 
-        mapping = {
-            "btc": "bitcoin",
-            "eth": "ethereum",
-            "ltc": "litecoin",
-            "sol": "solana"
-        }
+    if action == "add":
 
         coin = mapping.get(coin)
 
@@ -265,11 +301,15 @@ async def portfolio(ctx, action=None, coin=None, amount: float = None):
 
         portfolios[user][coin] = portfolios[user].get(coin, 0) + amount
 
-        await ctx.send("Coin zum Portfolio hinzugefügt")
+        await ctx.send("Coin hinzugefügt")
 
         return
 
     data = get_prices()
+
+    if data is None:
+        await ctx.send("API Fehler")
+        return
 
     total = 0
 
@@ -283,6 +323,7 @@ async def portfolio(ctx, action=None, coin=None, amount: float = None):
 
         price = data[coin]["usd"]
         value = price * amount
+
         total += value
 
         embed.add_field(
@@ -296,4 +337,4 @@ async def portfolio(ctx, action=None, coin=None, amount: float = None):
     await ctx.send(embed=embed)
 
 
-bot.run(os.getenv("TOKEN"))
+bot.run(TOKEN)
