@@ -82,14 +82,6 @@ def get_market():
         return None
        
 
-
-    params = {
-        "vs_currency": "usd",
-        "order": "market_cap_desc",
-        "per_page": 10,
-        "page": 1
-    }
-
     try:
         r = requests.get(API_MARKET, params=params, timeout=10)
         return r.json()
@@ -108,7 +100,11 @@ async def on_ready():
     print(bot.user)
     print("================================")
 
-    await bot.tree.sync()   # WICHTIG für Slash Commands
+    try:
+        synced = await bot.tree.sync()
+        print(f"Synced {len(synced)} commands")
+    except Exception as e:
+        print(e)
 
     check_alerts.start()
     live_charts.start()
@@ -157,11 +153,13 @@ async def market(interaction: discord.Interaction):
 async def coin_price(interaction, coin):
 
     data = get_prices()
+
     if not data:
         await interaction.response.send_message("⚠️ API Fehler")
         return
 
     coin_data = data.get(coin)
+
     if not coin_data:
         await interaction.response.send_message("Coin nicht gefunden")
         return
@@ -268,6 +266,7 @@ async def losers(interaction: discord.Interaction):
 
 @bot.tree.command()
 async def alert(interaction: discord.Interaction, coin: str, price: float):
+
     mapping = {
         "btc": "bitcoin",
         "eth": "ethereum",
@@ -276,9 +275,9 @@ async def alert(interaction: discord.Interaction, coin: str, price: float):
 
     coin = mapping.get(coin.lower())
 
-   if not coin:
-    await interaction.response.send_message("Coin nicht unterstützt")
-    return
+    if not coin:
+        await interaction.response.send_message("Coin nicht unterstützt")
+        return
 
     alerts.append({
         "channel": interaction.channel.id,
@@ -287,8 +286,7 @@ async def alert(interaction: discord.Interaction, coin: str, price: float):
     })
 
     await interaction.response.send_message(f"🚨 Alert gesetzt bei ${price}")
-
-
+    
 @tasks.loop(seconds=60)
 async def check_alerts():
 
@@ -422,50 +420,20 @@ async def setchannel(interaction: discord.Interaction):
 
 @bot.tree.command()
 async def cryptohelp(interaction: discord.Interaction):
-    
+
     embed = discord.Embed(
         title="Crypto Bot Commands",
         color=0x7289da
     )
 
-    embed.add_field(
-        name="Market",
-        value="!market",
-        inline=False
-    )
+    embed.add_field(name="Market", value="!market", inline=False)
+    embed.add_field(name="Coin Preise", value="!btc !eth !sol", inline=False)
+    embed.add_field(name="Top Coins", value="!top", inline=False)
+    embed.add_field(name="Gainers / Losers", value="!gainers !losers", inline=False)
+    embed.add_field(name="Portfolio", value="!portfolio add btc 0.5", inline=False)
+    embed.add_field(name="Alerts", value="!alert btc 70000", inline=False)
 
-    embed.add_field(
-        name="Coin Preise",
-        value="!btc !eth !sol",
-        inline=False
-    )
-
-    embed.add_field(
-        name="Top Coins",
-        value="!top",
-        inline=False
-    )
-
-    embed.add_field(
-        name="Gainers / Losers",
-        value="!gainers !losers",
-        inline=False
-    )
-
-    embed.add_field(
-        name="Portfolio",
-        value="!portfolio add btc 0.5",
-        inline=False
-    )
-
-    embed.add_field(
-        name="Alerts",
-        value="!alert btc 70000",
-        inline=False
-    )
-
-  await interaction.response.send_message(embed=embed)
-
+    await interaction.response.send_message(embed=embed)
 
 # ===============================
 # START
