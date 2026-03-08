@@ -99,8 +99,11 @@ async def on_ready():
     print(bot.user)
     print("================================")
 
+    await bot.tree.sync()   # WICHTIG für Slash Commands
+
     check_alerts.start()
     live_charts.start()
+   
 
 
 # ===============================
