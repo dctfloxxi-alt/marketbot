@@ -463,4 +463,5 @@ async def cryptohelp(ctx):
 # START
 # ===============================
 
+keep_alive()
 bot.run(TOKEN)
