@@ -143,8 +143,7 @@ async def market(interaction: discord.Interaction):
             inline=True
         )
 
-    await ctx.send(embed=embed)
-
+    await interaction.response.send_message(embed=embed)
 
 # ===============================
 # SINGLE PRICE
@@ -420,12 +419,15 @@ async def portfolio(ctx, action=None, coin=None, amount: float = None):
 
     await ctx.send(embed=embed)
    
-    @bot.tree.command()
-async def setchannel(ctx):
-    global chart_channel
-    chart_channel = ctx.channel
-    await ctx.send(f"✅ Live Chart Channel gesetzt auf {ctx.channel.mention}")
+  @bot.tree.command(name="setchannel", description="Setzt Live Chart Channel")
+async def setchannel(interaction: discord.Interaction):
 
+    global chart_channel
+    chart_channel = interaction.channel
+
+    await interaction.response.send_message(
+        f"✅ Live Chart Channel gesetzt auf {interaction.channel.mention}"
+    )
 # ===============================
 # HELP COMMAND
 # ===============================
