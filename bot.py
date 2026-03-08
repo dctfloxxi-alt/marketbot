@@ -243,7 +243,7 @@ async def losers(interaction: discord.Interaction):
 
     embed = discord.Embed(title="📉 Top Losers", color=0xff0000)
 
-    for coin in data[:]:
+    for coin in data[:5]:
 
         embed.add_field(
             name=coin["symbol"].upper(),
