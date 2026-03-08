@@ -107,7 +107,7 @@ async def on_ready():
 # MARKET
 # ===============================
 
-@bot.command()
+@bot.tree.command()
 async def market(ctx):
 
     data = get_prices()
@@ -175,17 +175,17 @@ async def coin_price(ctx, coin):
     await ctx.send(embed=embed)
 
 
-@bot.command()
+@bot.tree.command()
 async def btc(ctx):
     await coin_price(ctx, "bitcoin")
 
 
-@bot.command()
+@bot.tree.command()
 async def eth(ctx):
     await coin_price(ctx, "ethereum")
 
 
-@bot.command()
+@bot.tree.command()
 async def sol(ctx):
     await coin_price(ctx, "solana")
 
@@ -194,7 +194,7 @@ async def sol(ctx):
 # TOP 10
 # ===============================
 
-@bot.command()
+@bot.tree.command()
 async def top(ctx):
 
     data = get_market()
@@ -223,7 +223,7 @@ async def top(ctx):
 # GAINERS / LOSERS
 # ===============================
 
-@bot.command()
+@bot.tree.command()
 async def gainers(ctx):
 
     data = get_market()
@@ -246,8 +246,7 @@ async def gainers(ctx):
 
     await ctx.send(embed=embed)
 
-
-@bot.command()
+@bot.tree.command()
 async def losers(ctx):
 
     data = get_market()
@@ -273,7 +272,7 @@ async def losers(ctx):
 # ===============================
 # ALERT SYSTEM
 # ===============================
-@bot.command()
+@bot.tree.command()
 async def alert(ctx, coin, price: float):
 
     mapping = {
@@ -365,7 +364,7 @@ async def live_charts():
 # PORTFOLIO
 # ===============================
 
-@bot.command()
+@bot.tree.command()
 async def portfolio(ctx, action=None, coin=None, amount: float = None):
 
     user = str(ctx.author.id)
@@ -417,8 +416,8 @@ async def portfolio(ctx, action=None, coin=None, amount: float = None):
     )
 
     await ctx.send(embed=embed)
-    
-@bot.command()
+   
+    @bot.tree.command()
 async def setchannel(ctx):
     global chart_channel
     chart_channel = ctx.channel
@@ -428,7 +427,7 @@ async def setchannel(ctx):
 # HELP COMMAND
 # ===============================
 
-@bot.command()
+@bot.tree.command()
 async def cryptohelp(ctx):
 
     embed = discord.Embed(
