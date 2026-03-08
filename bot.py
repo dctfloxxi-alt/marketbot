@@ -15,6 +15,7 @@ def keep_alive():
     t.start()
 import discord
 from discord.ext import commands, tasks
+from discord import app_commands
 import requests
 import asyncio
 from datetime import datetime
