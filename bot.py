@@ -84,7 +84,8 @@ async def on_ready():
     print(bot.user)
     print("================================")
 
-    check_alerts.start()
+  check_alerts.start()
+live_charts.start()
 
 
 # ===============================
@@ -257,56 +258,8 @@ async def losers(ctx):
 # ===============================
 # ALERT SYSTEM
 # ===============================
-
 @bot.command()
 async def alert(ctx, coin, price: float):
-    @tasks.loop(seconds=60)
-async def check_alerts():
-    if not alerts:
-        return
-    data = get_prices()
-    for alert in alerts[:]:
-        coin = alert["coin"]
-        if coin not in data:
-            continue
-        price = data[coin]["usd"]
-        if price >= alert["price"]:
-            channel = bot.get_channel(alert["channel"])
-            await channel.send(
-                f"🚨 ALERT\n{coins[coin]} hat ${alert['price']} erreicht!\nAktuell: ${price}"
-            )
-            alerts.remove(alert)
-            @tasks.loop(minutes=5)
-async def live_charts():
-    if chart_channel is None:
-        return
-
-    data = get_prices()
-    if not data:
-        return
-
-    embed = discord.Embed(
-        title="📊 Live Crypto Market",
-        description=f"📅 {now()}",
-        color=0x00ff99
-    )
-
-    for coin, symbol in coins.items():
-        coin_data = data.get(coin)
-        if not coin_data:
-            continue
-
-        price = coin_data["usd"]
-        change = coin_data["usd_24h_change"]
-        arrow = "📈" if change >= 0 else "📉"
-
-        embed.add_field(
-            name=symbol,
-            value=f"${price}\n{arrow} {round(change,2)}%",
-            inline=True
-        )
-
-    await chart_channel.send(embed=embed)
 
     mapping = {
         "btc": "bitcoin",
@@ -356,6 +309,42 @@ async def check_alerts():
 
             alerts.remove(alert)
 
+@tasks.loop(minutes=5)
+async def live_charts():
+
+    if chart_channel is None:
+        return
+
+    data = get_prices()
+
+    if not data:
+        return
+
+    embed = discord.Embed(
+        title="📊 Live Crypto Market",
+        description=f"📅 {now()}",
+        color=0x00ff99
+    )
+
+    for coin, symbol in coins.items():
+
+        coin_data = data.get(coin)
+
+        if not coin_data:
+            continue
+
+        price = coin_data["usd"]
+        change = coin_data["usd_24h_change"]
+
+        arrow = "📈" if change >= 0 else "📉"
+
+        embed.add_field(
+            name=symbol,
+            value=f"${price}\n{arrow} {round(change,2)}%",
+            inline=True
+        )
+
+    await chart_channel.send(embed=embed)
 
 # ===============================
 # PORTFOLIO
