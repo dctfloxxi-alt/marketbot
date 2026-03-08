@@ -110,8 +110,8 @@ async def on_ready():
 # MARKET
 # ===============================
 
-@bot.tree.command()
-async def market(ctx):
+@bot.tree.command(name="market", description="Crypto Markt")
+async def market(interaction: discord.Interaction):
 
     data = get_prices()
 
