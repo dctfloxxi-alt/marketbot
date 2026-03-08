@@ -68,6 +68,7 @@ def get_prices():
     except:
         return None
 
+
 def get_market():
     params = {
         "vs_currency": "usd",
@@ -75,13 +76,6 @@ def get_market():
         "per_page": 10,
         "page": 1
     }
-    try:
-        r = requests.get(API_MARKET, params=params, timeout=10)
-        return r.json()
-    except:
-        return None
-       
-
     try:
         r = requests.get(API_MARKET, params=params, timeout=10)
         return r.json()
