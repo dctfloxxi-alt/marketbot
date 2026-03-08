@@ -72,7 +72,7 @@ def get_prices():
         return None
 
 
-def get_market():
+async def market(interaction: discord.Interaction):
 
     params = {
         "vs_currency": "usd",
@@ -114,9 +114,8 @@ async def on_ready():
 async def market(interaction: discord.Interaction):
 
     data = get_prices()
-
     if not data:
-        await ctx.send("⚠️ API Fehler")
+        await interaction.response.send_message("⚠️ API Fehler")
         return
 
     embed = discord.Embed(
@@ -126,15 +125,12 @@ async def market(interaction: discord.Interaction):
     )
 
     for coin, symbol in coins.items():
-
         coin_data = data.get(coin)
-
         if not coin_data:
             continue
 
         price = coin_data.get("usd", 0)
         change = coin_data.get("usd_24h_change", 0)
-
         arrow = "📈" if change >= 0 else "📉"
 
         embed.add_field(
@@ -418,8 +414,8 @@ async def portfolio(ctx, action=None, coin=None, amount: float = None):
     )
 
     await ctx.send(embed=embed)
-   
-  @bot.tree.command(name="setchannel", description="Setzt Live Chart Channel")
+    
+@bot.tree.command(name="setchannel", description="Setzt Live Chart Channel")
 async def setchannel(interaction: discord.Interaction):
 
     global chart_channel
@@ -428,6 +424,7 @@ async def setchannel(interaction: discord.Interaction):
     await interaction.response.send_message(
         f"✅ Live Chart Channel gesetzt auf {interaction.channel.mention}"
     )
+    
 # ===============================
 # HELP COMMAND
 # ===============================
