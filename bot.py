@@ -56,20 +56,31 @@ chart_channel = None
 def now():
     return datetime.now().strftime("%d.%m.%Y %H:%M")
 
-
 def get_prices():
-
     params = {
         "ids": ",".join(coins.keys()),
         "vs_currencies": "usd",
         "include_24hr_change": "true"
     }
-
     try:
         r = requests.get(API_SIMPLE, params=params, timeout=10)
         return r.json()
     except:
         return None
+
+def get_market():
+    params = {
+        "vs_currency": "usd",
+        "order": "market_cap_desc",
+        "per_page": 10,
+        "page": 1
+    }
+    try:
+        r = requests.get(API_MARKET, params=params, timeout=10)
+        return r.json()
+    except:
+        return None
+       
 
 
 async def market(interaction: discord.Interaction):
@@ -145,18 +156,16 @@ async def market(interaction: discord.Interaction):
 # SINGLE PRICE
 # ===============================
 
-async def coin_price(ctx, coin):
+async def coin_price(interaction, coin):
 
     data = get_prices()
-
     if not data:
-        await ctx.send("⚠️ API Fehler")
+        await interaction.response.send_message("⚠️ API Fehler")
         return
 
     coin_data = data.get(coin)
-
     if not coin_data:
-        await ctx.send("Coin nicht gefunden")
+        await interaction.response.send_message("Coin nicht gefunden")
         return
 
     price = coin_data.get("usd", 0)
@@ -170,36 +179,31 @@ async def coin_price(ctx, coin):
         color=0x00ff00
     )
 
-    await ctx.send(embed=embed)
-
+    await interaction.response.send_message(embed=embed)
+    
+@bot.tree.command()
+async def btc(interaction: discord.Interaction):
+    await coin_price(interaction, "bitcoin")
 
 @bot.tree.command()
-async def btc(ctx):
-    await coin_price(ctx, "bitcoin")
-
-
-@bot.tree.command()
-async def eth(ctx):
-    await coin_price(ctx, "ethereum")
-
+async def eth(interaction: discord.Interaction):
+    await coin_price(interaction, "ethereum")
 
 @bot.tree.command()
-async def sol(ctx):
-    await coin_price(ctx, "solana")
-
+async def sol(interaction: discord.Interaction):
+    await coin_price(interaction, "solana")
 
 # ===============================
 # TOP 10
 # ===============================
 
 @bot.tree.command()
-async def top(ctx):
-
+async def top(interaction: discord.Interaction):
+    
     data = get_market()
 
     if not data:
-        await ctx.send("API Fehler")
-        return
+        await interaction.response.send_message(embed=embed)
 
     embed = discord.Embed(
         title="🏆 Top 10 Cryptos",
@@ -214,15 +218,14 @@ async def top(ctx):
             inline=False
         )
 
-    await ctx.send(embed=embed)
-
+   await interaction.response.send_message()
 
 # ===============================
 # GAINERS / LOSERS
 # ===============================
 
 @bot.tree.command()
-async def gainers(ctx):
+async def gainers(interaction: discord.Interaction):
 
     data = get_market()
 
@@ -242,7 +245,7 @@ async def gainers(ctx):
             inline=False
         )
 
-    await ctx.send(embed=embed)
+   await interaction.response.send_message(embed=embed)
 
 @bot.tree.command()
 async def losers(ctx):
