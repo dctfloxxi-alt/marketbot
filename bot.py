@@ -83,8 +83,6 @@ def get_market():
        
 
 
-async def market(interaction: discord.Interaction):
-
     params = {
         "vs_currency": "usd",
         "order": "market_cap_desc",
@@ -196,14 +194,13 @@ async def sol(interaction: discord.Interaction):
 # ===============================
 # TOP 10
 # ===============================
-
 @bot.tree.command()
 async def top(interaction: discord.Interaction):
-    
-    data = get_market()
 
+    data = get_market()
     if not data:
-        await interaction.response.send_message(embed=embed)
+        await interaction.response.send_message("API Fehler")
+        return
 
     embed = discord.Embed(
         title="🏆 Top 10 Cryptos",
@@ -211,22 +208,19 @@ async def top(interaction: discord.Interaction):
     )
 
     for coin in data:
-
         embed.add_field(
             name=coin["symbol"].upper(),
             value=f"${coin['current_price']} | {round(coin['price_change_percentage_24h'],2)}%",
             inline=False
         )
 
-   await interaction.response.send_message()
-
+    await interaction.response.send_message(embed=embed)
 # ===============================
 # GAINERS / LOSERS
 # ===============================
 
 @bot.tree.command()
 async def gainers(interaction: discord.Interaction):
-
     data = get_market()
 
     data = sorted(
@@ -238,17 +232,15 @@ async def gainers(interaction: discord.Interaction):
     embed = discord.Embed(title="📈 Top Gainers", color=0x00ff00)
 
     for coin in data[:5]:
-
         embed.add_field(
             name=coin["symbol"].upper(),
             value=f"{coin['price_change_percentage_24h']:.2f}%",
             inline=False
         )
 
-   await interaction.response.send_message(embed=embed)
-
+    await interaction.response.send_message(embed=embed)
 @bot.tree.command()
-async def losers(ctx):
+async def losers(interaction: discord.Interaction):
 
     data = get_market()
 
@@ -259,7 +251,7 @@ async def losers(ctx):
 
     embed = discord.Embed(title="📉 Top Losers", color=0xff0000)
 
-    for coin in data[:5]:
+    for coin in data[:]:
 
         embed.add_field(
             name=coin["symbol"].upper(),
@@ -267,15 +259,15 @@ async def losers(ctx):
             inline=False
         )
 
-    await ctx.send(embed=embed)
+    await interaction.response.send_message(embed=embed)
 
 
 # ===============================
 # ALERT SYSTEM
 # ===============================
-@bot.tree.command()
-async def alert(ctx, coin, price: float):
 
+@bot.tree.command()
+async def alert(interaction: discord.Interaction, coin: str, price: float):
     mapping = {
         "btc": "bitcoin",
         "eth": "ethereum",
@@ -284,17 +276,17 @@ async def alert(ctx, coin, price: float):
 
     coin = mapping.get(coin.lower())
 
-    if not coin:
-        await ctx.send("Coin nicht unterstützt")
-        return
+   if not coin:
+    await interaction.response.send_message("Coin nicht unterstützt")
+    return
 
     alerts.append({
-        "channel": ctx.channel.id,
+        "channel": interaction.channel.id,
         "coin": coin,
         "price": price
     })
 
-    await ctx.send(f"🚨 Alert gesetzt bei ${price}")
+    await interaction.response.send_message(f"🚨 Alert gesetzt bei ${price}")
 
 
 @tasks.loop(seconds=60)
@@ -366,9 +358,9 @@ async def live_charts():
 # ===============================
 
 @bot.tree.command()
-async def portfolio(ctx, action=None, coin=None, amount: float = None):
+async def portfolio(interaction: discord.Interaction, action: str=None, coin: str=None, amount: float=None):
 
-    user = str(ctx.author.id)
+    user = str(interaction.user.id)
 
     mapping = {
         "btc": "bitcoin",
@@ -380,29 +372,25 @@ async def portfolio(ctx, action=None, coin=None, amount: float = None):
         portfolios[user] = {}
 
     if action == "add":
-
         coin = mapping.get(coin)
 
         if not coin:
-            await ctx.send("Coin nicht unterstützt")
+            await interaction.response.send_message("Coin nicht unterstützt")
             return
 
         portfolios[user][coin] = portfolios[user].get(coin, 0) + amount
 
-        await ctx.send("Coin hinzugefügt")
+        await interaction.response.send_message("✅ Coin hinzugefügt")
         return
 
     data = get_prices()
-
     total = 0
 
     embed = discord.Embed(title="💼 Portfolio", color=0x3498db)
 
     for coin, amount in portfolios[user].items():
-
         price = data[coin]["usd"]
         value = price * amount
-
         total += value
 
         embed.add_field(
@@ -416,7 +404,7 @@ async def portfolio(ctx, action=None, coin=None, amount: float = None):
         value=f"${round(total,2)}"
     )
 
-    await ctx.send(embed=embed)
+    await interaction.response.send_message(embed=embed)
     
 @bot.tree.command(name="setchannel", description="Setzt Live Chart Channel")
 async def setchannel(interaction: discord.Interaction):
@@ -433,8 +421,8 @@ async def setchannel(interaction: discord.Interaction):
 # ===============================
 
 @bot.tree.command()
-async def cryptohelp(ctx):
-
+async def cryptohelp(interaction: discord.Interaction):
+    
     embed = discord.Embed(
         title="Crypto Bot Commands",
         color=0x7289da
@@ -476,7 +464,7 @@ async def cryptohelp(ctx):
         inline=False
     )
 
-    await ctx.send(embed=embed)
+  await interaction.response.send_message(embed=embed)
 
 
 # ===============================
