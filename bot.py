@@ -78,14 +78,13 @@ def get_market():
 
 @bot.event
 async def on_ready():
-
     print("================================")
     print("BOT ONLINE")
     print(bot.user)
     print("================================")
 
-  check_alerts.start()
-live_charts.start()
+    check_alerts.start()
+    live_charts.start()
 
 
 # ===============================
